@@ -16,7 +16,7 @@ class DietRequest(BaseModel):
 
 # Replace with your OpenAI API Key
 OPENAI_API_KEY = "OpenAI API KEY"
-penai.api_key = OPENAI_API_KEY
+openai.api_key = OPENAI_API_KEY
 
 def generate_recommendation(preferences, goal, allergies):
     client = openai.OpenAI(api_key=OPENAI_API_KEY)  # ✅ Adapted for the new OpenAI SDK
@@ -116,5 +116,5 @@ if st.button("Get Recommendation"):
         st.error("Failed to get recommendation")
 
 # How to run:
-# 1. Start the FastAPI server: uvicorn filename:app --reload
+# 1. Start the FastAPI server: uvicorn demo:app --reload
 # 2. Run Streamlit: streamlit run filename.py
