@@ -5,8 +5,13 @@ import streamlit as st
 import requests
 import openai
 import json
+import os
 
 app = FastAPI()
+
+from dotenv import load_dotenv
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Define request model
 class DietRequest(BaseModel):
@@ -15,7 +20,7 @@ class DietRequest(BaseModel):
     allergies: List[str] = []  # Allergens, e.g., ['peanuts', 'dairy']
 
 # Replace with your OpenAI API Key
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 openai.api_key = OPENAI_API_KEY
 
 def generate_recommendation(preferences, goal, allergies):
