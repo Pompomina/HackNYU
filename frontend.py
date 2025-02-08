@@ -1,5 +1,7 @@
 import streamlit as st
 import requests
+import json
+import os
 
 # Page Configuration
 st.set_page_config(
@@ -7,6 +9,21 @@ st.set_page_config(
     page_icon="🥗",
     layout="wide"
 )
+
+# Load fridge data
+FRIDGE_FILE = "fridge.json"
+
+def load_fridge():
+    if os.path.exists(FRIDGE_FILE):
+        with open(FRIDGE_FILE, "r") as f:
+            return json.load(f)
+    return []
+
+def save_fridge(fridge_items):
+    with open(FRIDGE_FILE, "w") as f:
+        json.dump(fridge_items, f)
+
+fridge = load_fridge()
 
 # Inject custom CSS for title styling
 st.markdown("""
@@ -41,7 +58,27 @@ with col1:
 
 with col2:
     st.markdown("<div class='custom-title'>Diet Recommendation</div>", unsafe_allow_html=True)
-    st.markdown("<div class='custom-subtitle'>Personalized meal plans based on your health goals</div>", unsafe_allow_html=True)
+    st.markdown("<div class='custom-subtitle'>Personalized meal plans based on your available ingredients</div>", unsafe_allow_html=True)
+
+st.markdown("---")
+
+# Fridge Feature
+st.subheader("🧊 Your Fridge")
+food_item = st.text_input("Enter a food item to add to your fridge", placeholder="e.g., chicken, spinach, eggs")
+if st.button("➕ Add Food to Fridge"):
+    if food_item:
+        fridge.append(food_item.lower())
+        save_fridge(fridge)
+        st.success(f"✅ {food_item} added to the fridge!")
+
+if fridge:
+    st.write("### 🛒 Current Ingredients in Your Fridge:")
+    st.write(", ".join(fridge))
+
+if st.button("🗑 Clear Fridge"):
+    fridge = []
+    save_fridge(fridge)
+    st.success("❌ Fridge cleared!")
 
 st.markdown("---")
 
@@ -52,11 +89,12 @@ goal = st.selectbox("Your Health Goal", ["Muscle Gain", "Weight Loss", "Maintain
 allergies = st.text_input("Enter allergens (comma-separated)", placeholder="e.g., nuts, gluten")
 
 # Handle button click
-if st.button("🔍 Get Recommendation"):
+if st.button("🔍 Generate Meal from Fridge"):
     payload = {
         "preferences": [p.strip() for p in preferences.split(",") if p.strip()],
         "goal": goal,
-        "allergies": [a.strip() for a in allergies.split(",") if a.strip()]
+        "allergies": [a.strip() for a in allergies.split(",") if a.strip()],
+        "available_ingredients": fridge
     }
 
     response = requests.post("http://127.0.0.1:8081/recommend", json=payload)
@@ -86,7 +124,3 @@ if st.button("🔍 Get Recommendation"):
 
     else:
         st.error("🚨 Failed to retrieve recommendations. Please try again.")
-
-# Footer
-st.markdown("---")
-st.markdown("🔗 Made with ❤️ using Streamlit | [GitHub Repo](#)")

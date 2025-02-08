@@ -4,7 +4,6 @@ from typing import List
 import requests
 import openai
 
-
 app = FastAPI()
 
 # Replace with your OpenAI and Google API Keys
@@ -14,12 +13,11 @@ YOUTUBE_API_KEY = "AIzaSyBHxuNGuV6aApcXwvkTEm7nxDwDXlRB4Yg"
 openai.api_key = OPENAI_API_KEY
 video_url = ''
 
-
 class DietRequest(BaseModel):
-    preferences: List[str]  
-    goal: str  
-    allergies: List[str] = []  
-
+    preferences: List[str]
+    goal: str
+    allergies: List[str] = []
+    available_ingredients: List[str] = []  # New field for fridge items
 
 def search_youtube(query):
     """Search YouTube and return a valid video link."""
@@ -28,12 +26,10 @@ def search_youtube(query):
 
     if "items" in response and response["items"]:
         video_id = response["items"][0]["id"]["videoId"]
-        video_url = f"https://www.youtube.com/watch?v={video_id}"
         return f"https://www.youtube.com/watch?v={video_id}"
     return "No valid YouTube link found."
 
-
-def generate_recommendation(preferences, goal, allergies):
+def generate_recommendation(preferences, goal, allergies, available_ingredients):
     client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
     prompt = f"""
@@ -42,8 +38,9 @@ def generate_recommendation(preferences, goal, allergies):
     - Dietary preferences: {', '.join(preferences) if preferences else 'None'}
     - Health goal: {goal}
     - Allergens: {', '.join(allergies) if allergies else 'None'}
+    - Available ingredients: {', '.join(available_ingredients) if available_ingredients else 'None'}
 
-    Provide specific dish names only (e.g., "Grilled Chicken Salad", "Vegan Tofu Stir-Fry"), without additional descriptions.
+    Only recommend meals that **can be made using the available ingredients**. Provide specific dish names only.
     """
 
     try:
@@ -54,29 +51,21 @@ def generate_recommendation(preferences, goal, allergies):
         )
 
         dish_names = response.choices[0].message.content.strip().split("\n")
-
-        breakfast_dish = dish_names[0] if len(dish_names) > 0 else "Oatmeal with Fruits"
-        lunch_dish = dish_names[1] if len(dish_names) > 1 else "Grilled Chicken Salad"
-        dinner_dish = dish_names[2] if len(dish_names) > 2 else "Vegan Tofu Stir-Fry"
+        print(response)
+        print("dish_names")
 
         return {
-            "breakfast": {"dish": breakfast_dish, "youtube_link": search_youtube(breakfast_dish)},
-            "lunch": {"dish": lunch_dish, "youtube_link": search_youtube(lunch_dish)},
-            "dinner": {"dish": dinner_dish, "youtube_link": search_youtube(dinner_dish)},
+            "breakfast": {"dish": dish_names[0], "youtube_link": search_youtube(dish_names[0])} if dish_names else {},
+            "lunch": {"dish": dish_names[1], "youtube_link": search_youtube(dish_names[1])} if len(dish_names) > 1 else {},
+            "dinner": {"dish": dish_names[2], "youtube_link": search_youtube(dish_names[2])} if len(dish_names) > 2 else {},
             "advice": "Stay hydrated and eat balanced meals."
         }
 
     except Exception as e:
         print(f"OpenAI API call failed: {e}")
-        return {
-            "breakfast": {"dish": "Error generating recommendation.", "youtube_link": ""},
-            "lunch": {"dish": "", "youtube_link": ""},
-            "dinner": {"dish": "", "youtube_link": ""},
-            "advice": ""
-        }
-
+        return {}
 
 @app.post("/recommend")
 def recommend_diet(request: DietRequest):
-    recommendations = generate_recommendation(request.preferences, request.goal, request.allergies)
+    recommendations = generate_recommendation(request.preferences, request.goal, request.allergies, request.available_ingredients)
     return {"recommendations": recommendations}
