@@ -64,12 +64,20 @@ st.markdown("---")
 
 # Fridge Feature
 st.subheader("🧊 Your Fridge")
-food_item = st.text_input("Enter a food item to add to your fridge", placeholder="e.g., chicken, spinach, eggs")
+food_item = st.text_input("Enter a food item to add to / remove from your fridge", placeholder="e.g., chicken, spinach, eggs")
 if st.button("➕ Add Food to Fridge"):
     if food_item:
-        fridge.append(food_item.lower())
+        new_items = [item.strip().lower() for item in food_item.split(",")]
+        fridge.extend(new_items)
         save_fridge(fridge)
-        st.success(f"✅ {food_item} added to the fridge!")
+        st.success(f"✅ Added: {', '.join(new_items)} to the fridge!")
+
+
+if st.button("➖ Remove Food from Fridge"):
+    if food_item:
+        fridge.remove(food_item.lower())
+        save_fridge(fridge)
+        st.success(f"✅ {food_item} remove from the fridge!")
 
 if fridge:
     st.write("### 🛒 Current Ingredients in Your Fridge:")
