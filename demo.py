@@ -15,7 +15,7 @@ class DietRequest(BaseModel):
     allergies: List[str] = []  # Allergens, e.g., ['peanuts', 'dairy']
 
 # Replace with your OpenAI API Key
-OPENAI_API_KEY = "OpenAI API KEY"
+OPENAI_API_KEY = "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"
 openai.api_key = OPENAI_API_KEY
 
 def generate_recommendation(preferences, goal, allergies):
@@ -70,7 +70,7 @@ def recommend_diet(request: DietRequest):
     return {"recommendations": recommendations}
 
 # Streamlit UI
-st.title("Diet Recommendation System")
+st.set_page_config(page_title="Diet Recommendation System", page_icon="img/Diet_logo.png",)
 
 preferences = st.text_input("Enter your dietary preferences (comma-separated)")
 goal = st.selectbox("Your health goal", ["Muscle gain", "Weight loss", "Maintain health"])
