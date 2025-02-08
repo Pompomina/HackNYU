@@ -1,6 +1,8 @@
 import openai
+import getpass  # Securely take user input for sensitive information
 
-openai.api_key = "Enter Your API Key Here"
+# Prompt user to enter their OpenAI API key securely
+openai.api_key = getpass.getpass("Enter your OpenAI API key: ")
 
 class OpenAIBot:
     def __init__(self,engine):
