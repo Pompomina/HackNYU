@@ -42,7 +42,6 @@ with col2:
 
 #
 
-
 preferences = st.text_input("Enter your dietary preferences (comma-separated)")
 goal = st.selectbox("Your health goal", ["Muscle gain", "Weight loss", "Maintain health"])
 allergies = st.text_input("Enter your allergens (comma-separated)")
@@ -53,27 +52,49 @@ if st.button("Get Recommendation"):
         "goal": goal,
         "allergies": allergies.split(",") if allergies else []
     }
-    
-    try:
-        response = requests.post("http://127.0.0.1:8000/recommend", json=payload)
+    response = requests.post("http://127.0.0.1:8081/recommend", json=payload)
+    if response.status_code == 200:
+        recommendations = response.json()["recommendations"]
 
-        if response.status_code == 200:
-            recommendations = response.json()["recommendations"]
+        # ✅ Now we can safely use dictionary keys
+        breakfast = recommendations.get("breakfast", {"dish": "No breakfast recommendation available.", "youtube_link": ""})
+        lunch = recommendations.get("lunch", {"dish": "No lunch recommendation available.", "youtube_link": ""})
+        dinner = recommendations.get("dinner", {"dish": "No dinner recommendation available.", "youtube_link": ""})
+        advice = recommendations.get("advice", "No additional advice available.")
 
-            with st.expander("🍳 **Breakfast**"):
-                st.write(recommendations.get("breakfast", "No recommendation."))
-
-            with st.expander("🍱 **Lunch**"):
-                st.write(recommendations.get("lunch", "No recommendation."))
-
-            with st.expander("🍲 **Dinner**"):
-                st.write(recommendations.get("dinner", "No recommendation."))
-
-            with st.expander("⚠️ **Nutritional Advice**"):
-                st.write(recommendations.get("advice", "No additional advice."))
-        else:
-            st.error("Failed to get recommendations. Please try again.")
-
-    except requests.exceptions.ConnectionError:
-        st.error("Backend server is not running. Start `demo.py` first.")
-
+        formatted_output = f"""
+        ### 🍽 **Recommended Meals**
+        
+        #### 🍳 **Breakfast**
+        {breakfast["dish"]}  
+        [Watch on YouTube]({breakfast["youtube_link"]})
+        """
+        st.markdown(formatted_output)
+        if breakfast["youtube_link"]:
+            st.video(breakfast["youtube_link"])
+        
+        formatted_output = f"""
+        #### 🍱 **Lunch**
+        {lunch["dish"]}  
+        [Watch on YouTube]({lunch["youtube_link"]})
+        """
+        st.markdown(formatted_output)
+        if lunch["youtube_link"]:
+            st.video(lunch["youtube_link"])
+        
+        formatted_output = f"""
+        #### 🍲 **Dinner**
+        {dinner["dish"]}  
+        [Watch on YouTube]({dinner["youtube_link"]})
+        """
+        st.markdown(formatted_output)
+        if dinner["youtube_link"]:
+            st.video(dinner["youtube_link"])
+        
+        formatted_output = f"""
+        #### ⚠️ **Nutritional Advice**
+        {advice}
+        """
+        st.markdown(formatted_output)
+    else:
+        st.error("Failed to get recommendation")

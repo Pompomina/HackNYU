@@ -1,124 +1,84 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List
+from streamlit_player import st_player
 import streamlit as st
 import requests
 import openai
 import json
-import os
+
 
 app = FastAPI()
 
-from dotenv import load_dotenv
-load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# Replace with your OpenAI and Google API Keys
+OPENAI_API_KEY = "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"
+YOUTUBE_API_KEY = "AIzaSyBHxuNGuV6aApcXwvkTEm7nxDwDXlRB4Yg"
 
-# Define request model
-class DietRequest(BaseModel):
-    preferences: List[str]  # Dietary preferences, e.g., ['low carb', 'vegetarian']
-    goal: str  # Goal, e.g., 'muscle gain', 'weight loss'
-    allergies: List[str] = []  # Allergens, e.g., ['peanuts', 'dairy']
-
-# Replace with your OpenAI API Key
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 openai.api_key = OPENAI_API_KEY
+video_url = ''
+
+class DietRequest(BaseModel):
+    preferences: List[str]  
+    goal: str  
+    allergies: List[str] = []  
+
+def search_youtube(query):
+    """Search YouTube and return a valid video link."""
+    url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&type=video&key={YOUTUBE_API_KEY}&maxResults=1"
+    response = requests.get(url).json()
+
+    if "items" in response and response["items"]:
+        video_id = response["items"][0]["id"]["videoId"]
+        video_url = f"https://www.youtube.com/watch?v={video_id}"
+        return f"https://www.youtube.com/watch?v={video_id}"
+    return "No valid YouTube link found."
 
 def generate_recommendation(preferences, goal, allergies):
-    client = openai.OpenAI(api_key=OPENAI_API_KEY)  # ✅ Adapted for the new OpenAI SDK
+    client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
     prompt = f"""
-    You are a professional nutritionist. Based on the following information, provide meal recommendations in structured JSON format:
+    You are a professional nutritionist. Based on the following information, provide meal recommendations:
+
     - Dietary preferences: {', '.join(preferences) if preferences else 'None'}
     - Health goal: {goal}
     - Allergens: {', '.join(allergies) if allergies else 'None'}
 
-    ### **Return JSON output only in this format** (no extra text):
-
-    {{
-      "breakfast": "A high-protein breakfast recommendation...",
-      "lunch": "A balanced lunch recommendation...",
-      "dinner": "A nutritious dinner recommendation...",
-      "advice": "General nutritional advice..."
-    }}
-
-    Only return a JSON object **without additional explanation**.
+    Provide specific dish names only (e.g., "Grilled Chicken Salad", "Vegan Tofu Stir-Fry"), without additional descriptions.
     """
 
     try:
         response = client.chat.completions.create(
             model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a professional nutrition advisor"},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=1000
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=100
         )
 
-        recommendation_text = response.choices[0].message.content
-        print("DEBUG: Raw GPT Response:\n", recommendation_text)  # ✅ Debugging
+        dish_names = response.choices[0].message.content.strip().split("\n")
 
-        # ✅ Ensure GPT-4 output is correctly formatted as JSON
-        recommendations = json.loads(recommendation_text)  
+        breakfast_dish = dish_names[0] if len(dish_names) > 0 else "Oatmeal with Fruits"
+        lunch_dish = dish_names[1] if len(dish_names) > 1 else "Grilled Chicken Salad"
+        dinner_dish = dish_names[2] if len(dish_names) > 2 else "Vegan Tofu Stir-Fry"
 
-        if not isinstance(recommendations, dict):  # ✅ Extra safeguard
-            raise ValueError("GPT response is not a valid dictionary.")
-
-        return recommendations
+        return {
+            "breakfast": {"dish": breakfast_dish, "youtube_link": search_youtube(breakfast_dish)},
+            "lunch": {"dish": lunch_dish, "youtube_link": search_youtube(lunch_dish)},
+            "dinner": {"dish": dinner_dish, "youtube_link": search_youtube(dinner_dish)},
+            "advice": "Stay hydrated and eat balanced meals."
+        }
 
     except Exception as e:
         print(f"OpenAI API call failed: {e}")
-        return {"breakfast": "Error generating recommendation.", "lunch": "", "dinner": "", "advice": ""}
+        return {
+            "breakfast": {"dish": "Error generating recommendation.", "youtube_link": ""},
+            "lunch": {"dish": "", "youtube_link": ""},
+            "dinner": {"dish": "", "youtube_link": ""},
+            "advice": ""
+        }
 
 @app.post("/recommend")
 def recommend_diet(request: DietRequest):
     recommendations = generate_recommendation(request.preferences, request.goal, request.allergies)
     return {"recommendations": recommendations}
-
-# Streamlit UI
-st.set_page_config(page_title="Diet Recommendation System", page_icon="img/Diet_logo.png",)
-
-preferences = st.text_input("Enter your dietary preferences (comma-separated)")
-goal = st.selectbox("Your health goal", ["Muscle gain", "Weight loss", "Maintain health"])
-allergies = st.text_input("Enter your allergens (comma-separated)")
-
-if st.button("Get Recommendation"):
-    payload = {
-        "preferences": preferences.split(",") if preferences else [],
-        "goal": goal,
-        "allergies": allergies.split(",") if allergies else []
-    }
-    response = requests.post("http://127.0.0.1:8000/recommend", json=payload)
-    if response.status_code == 200:
-        recommendations = response.json()["recommendations"]
-
-        if isinstance(recommendations, list):  # ✅ Convert list to dictionary if needed
-            recommendations = json.loads(recommendations[0]) if recommendations else {}
-
-        # ✅ Now we can safely use dictionary keys
-        breakfast = recommendations.get("breakfast", "No breakfast recommendation available.")
-        lunch = recommendations.get("lunch", "No lunch recommendation available.")
-        dinner = recommendations.get("dinner", "No dinner recommendation available.")
-        advice = recommendations.get("advice", "No additional advice available.")
-
-        formatted_output = f"""
-        ### 🍽 **Recommended Meals**
-        
-        #### 🍳 **Breakfast**
-        {breakfast}
-
-        #### 🍱 **Lunch**
-        {lunch}
-
-        #### 🍲 **Dinner**
-        {dinner}
-
-        #### ⚠️ **Nutritional Advice**
-        {advice}
-        """
-
-        st.markdown(formatted_output)
-    else:
-        st.error("Failed to get recommendation")
 
 # How to run:
 # 1. Start the FastAPI server: uvicorn demo:app --reload
