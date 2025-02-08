@@ -1,16 +1,13 @@
 import streamlit as st
 import requests
-import json
-import os
-import openai
 
-#tab config
+# tab config
 st.set_page_config(
     page_title="Diet Recommendation",
     page_icon="🥗",
 )
 
-#TITLE config
+# TITLE config
 # Inject custom CSS for font styles
 st.markdown(
     """

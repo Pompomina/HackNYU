@@ -1,11 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
-from streamlit_player import st_player
-import streamlit as st
 import requests
 import openai
-import json
 
 
 app = FastAPI()
@@ -17,10 +14,12 @@ YOUTUBE_API_KEY = "AIzaSyBHxuNGuV6aApcXwvkTEm7nxDwDXlRB4Yg"
 openai.api_key = OPENAI_API_KEY
 video_url = ''
 
+
 class DietRequest(BaseModel):
     preferences: List[str]  
     goal: str  
     allergies: List[str] = []  
+
 
 def search_youtube(query):
     """Search YouTube and return a valid video link."""
@@ -32,6 +31,7 @@ def search_youtube(query):
         video_url = f"https://www.youtube.com/watch?v={video_id}"
         return f"https://www.youtube.com/watch?v={video_id}"
     return "No valid YouTube link found."
+
 
 def generate_recommendation(preferences, goal, allergies):
     client = openai.OpenAI(api_key=OPENAI_API_KEY)
@@ -75,60 +75,8 @@ def generate_recommendation(preferences, goal, allergies):
             "advice": ""
         }
 
+
 @app.post("/recommend")
 def recommend_diet(request: DietRequest):
     recommendations = generate_recommendation(request.preferences, request.goal, request.allergies)
     return {"recommendations": recommendations}
-
-<<<<<<< HEAD
-# How to run:
-# 1. Start the FastAPI server: uvicorn demo:app --reload
-# 2. Run Streamlit: streamlit run filename.py
-=======
-# Streamlit UI
-st.title("Diet Recommendation System")
-
-preferences = st.text_input("Enter your dietary preferences (comma-separated)")
-goal = st.selectbox("Your health goal", ["Muscle gain", "Weight loss", "Maintain health"])
-allergies = st.text_input("Enter your allergens (comma-separated)")
-
-if st.button("Get Recommendation"):
-    payload = {
-        "preferences": preferences.split(",") if preferences else [],
-        "goal": goal,
-        "allergies": allergies.split(",") if allergies else []
-    }
-    response = requests.post("http://127.0.0.1:8082/recommend", json=payload)
-    if response.status_code == 200:
-        recommendations = response.json()["recommendations"]
-
-        breakfast = recommendations.get("breakfast", {"dish": "No breakfast recommendation available.", "youtube_link": ""})
-        lunch = recommendations.get("lunch", {"dish": "No lunch recommendation available.", "youtube_link": ""})
-        dinner = recommendations.get("dinner", {"dish": "No dinner recommendation available.", "youtube_link": ""})
-        advice = recommendations.get("advice", "No additional advice available.")
-
-        formatted_output = f"""
-        ### 🍽 **Recommended Meals**
-        
-        #### 🍳 **Breakfast**
-        {breakfast["dish"]}  
-        [Watch on YouTube]({breakfast["youtube_link"]})
-
-        #### 🍱 **Lunch**
-        {lunch["dish"]}  
-        [Watch on YouTube]({lunch["youtube_link"]})
-
-        #### 🍲 **Dinner**
-        {dinner["dish"]}  
-        [Watch on YouTube]({dinner["youtube_link"]})
-
-        #### ⚠️ **Nutritional Advice**
-        {advice}
-        """
-
-        st.markdown(formatted_output)
-    else:
-        st.error("Failed to get recommendation")
-if video_url:
-    st_player(video_url)
->>>>>>> 352d309 (add new)
