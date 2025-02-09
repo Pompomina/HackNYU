@@ -2,6 +2,8 @@ import streamlit as st
 import requests
 import json
 import os
+import matplotlib.pyplot as plt
+
 
 # Page Configuration
 st.set_page_config(
@@ -105,7 +107,7 @@ if st.button("🔍 Generate Meal from Fridge"):
         "available_ingredients": fridge
     }
 
-    response = requests.post("http://127.0.0.1:8081/recommend", json=payload)
+    response = requests.post("http://127.0.0.1:8001/recommend", json=payload)
 
     if response.status_code == 200:
         recommendations = response.json()["recommendations"]
@@ -125,6 +127,36 @@ if st.button("🔍 Generate Meal from Fridge"):
                 st.markdown(f"**{details['dish']}**")
                 if details["youtube_link"]:
                     st.video(details["youtube_link"])
+                
+                if details.get("nutrients"):
+                    nutrients = details["nutrients"]
+
+                    # Extract Calories Separately
+                    calories = nutrients.pop("calories", None)
+
+                    # Display Calories in Bold
+                    if calories:
+                        st.markdown(f"**🔥 Calories: {calories} kcal**")
+
+                    # Display Pie Chart for Nutrients (excluding Calories)
+                    labels = list(nutrients.keys())
+                    values = list(nutrients.values())
+
+                    fig, ax = plt.subplots(figsize=(1, 1))  # ⬅️ ⬅️ 缩小 Pie Chart
+                    wedges, texts, autotexts = ax.pie(
+                        values, labels=labels, autopct="%1.1f%%", startangle=90,
+                        textprops={'fontsize': 5}  # ⬅️ 缩小文字大小
+                    )
+                    ax.axis("equal")  # 保证 Pie Chart 仍然是圆形
+
+                    st.pyplot(fig)
+
+                # Display Nutrient Breakdown in Sentence
+                    st.info(
+                        f"{details['dish']} contains approximately {calories} kcal, "
+                        f"{nutrients['protein']}g of protein, {nutrients['carbohydrates']}g of carbs, "
+                        f"and {nutrients['fat']}g of fat per 500g serving."
+                    )
 
         # Display Nutritional Advice
         st.subheader("⚠️ Nutritional Advice")
@@ -132,3 +164,8 @@ if st.button("🔍 Generate Meal from Fridge"):
 
     else:
         st.error("🚨 Failed to retrieve recommendations. Please try again.")
+
+
+
+
+
