@@ -168,7 +168,7 @@ elif eat_location == "Outside":
     location = g.latlng if g.latlng else None
 
     if location:
-        latitude, longitude = location
+        latitude, longitude = 40.694011, -73.986707
         st.write(f"📍 **Detected Location:** ({latitude}, {longitude})")
     else:
         latitude = st.number_input("Enter your latitude:", value=40.694011)
