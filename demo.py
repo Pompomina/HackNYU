@@ -9,10 +9,10 @@ import re
 app = FastAPI()
 
 # Replace with your OpenAI and Google API Keys
-OPENAI_API_KEY = "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"
-YOUTUBE_API_KEY = "AIzaSyB6r8qiY1-ZTU61FYFjLG6dN7-yX-4ogfA"
-GOOGLE_API_KEY = "AIzaSyBKYap3W4p_2BlNikzSD_Dr8vZIBJY9_9s"
-YELP_API_KEY = "-2BXiV36VjYtzA-J3UXtvjLgrqd6X-PuoyB7AitMbleV48MMGDp-f9Bd82Bh6RjEboLmM-MVNS5ZuJg9zH_wdcp2Y79a2Y6PD6CmIXcwYGfipp2A6Ngt6OtoC8GnZ3Yx"
+OPENAI_API_KEY = "sk-XXX"
+YOUTUBE_API_KEY = "XXX"
+GOOGLE_API_KEY = "XXX"
+YELP_API_KEY = "XXX"
 
 openai.api_key = OPENAI_API_KEY
 video_url = ''
