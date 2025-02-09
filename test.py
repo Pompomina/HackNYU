@@ -9,7 +9,7 @@ app = FastAPI()
 
 # Replace with your OpenAI and Google API Keys
 OPENAI_API_KEY = "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"
-YOUTUBE_API_KEY = "AIzaSyBHxuNGuV6aApcXwvkTEm7nxDwDXlRB4Yg"
+YOUTUBE_API_KEY = "AIzaSyCjfnr9mFOPCJkYwp3c4mMo-cpMOs2eRIw"
 
 openai.api_key = OPENAI_API_KEY
 video_url = ''

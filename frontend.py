@@ -116,7 +116,7 @@ if st.button("🔍 Generate Meal from Fridge"):
             "Lunch": recommendations.get("lunch", {"dish": "No recommendation available", "youtube_link": ""}),
             "Dinner": recommendations.get("dinner", {"dish": "No recommendation available", "youtube_link": ""})
         }
-        advice = recommendations.get("advice", "No additional advice available.")
+        advice = recommendations.get("advice", {}).get("text", "No additional advice available.")
 
         st.subheader("🍽 Recommended Meals")
 
