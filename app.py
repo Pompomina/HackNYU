@@ -4,6 +4,7 @@ import geocoder
 import json
 import os
 import matplotlib.pyplot as plt
+import plotly.express as px
 import folium
 from streamlit_folium import folium_static
 
@@ -139,10 +140,17 @@ if eat_location == "Home":
                             st.markdown(f"**🔥 Calories: {calories} kcal**")
                         labels = list(nutrients.keys())
                         values = list(nutrients.values())
-                        fig, ax = plt.subplots(figsize=(2, 2))
-                        ax.pie(values, labels=labels, autopct="%1.1f%%", startangle=90, textprops={'fontsize': 8})
-                        ax.axis("equal")
-                        st.pyplot(fig)
+                        fig = px.pie(
+                            names=labels,
+                            values=values,
+                            title="Nutrient Distribution",
+                            hole=0,  # 0 for full pie, adjust for donut effect
+                        )
+                        fig.update_layout(width=800, height=700)
+                        fig.update_traces(textinfo="percent+label", textfont_size=30)
+
+                        # Display in Streamlit
+                        st.plotly_chart(fig)
                         st.info(
                             f"{details['dish']} contains approximately {calories} kcal, "
                             f"{nutrients['protein']}g of protein, {nutrients['carbohydrates']}g of carbs, "
@@ -163,8 +171,8 @@ elif eat_location == "Outside":
         latitude, longitude = location
         st.write(f"📍 **Detected Location:** ({latitude}, {longitude})")
     else:
-        latitude = st.number_input("Enter your latitude:", value=40.730610)
-        longitude = st.number_input("Enter your longitude:", value=-73.935242)
+        latitude = st.number_input("Enter your latitude:", value=40.694011)
+        longitude = st.number_input("Enter your longitude:", value=-73.986707)
         st.warning("Could not determine location automatically. Please enter manually.")
 
     if st.button("📍 Find Restaurants"):
@@ -224,6 +232,4 @@ elif eat_location == "Outside":
                 folium_static(m)
         else:
             st.error("Failed to fetch restaurant data.")
-
-
 
